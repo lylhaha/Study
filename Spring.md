@@ -372,3 +372,269 @@ JDBC:
 
 
 ####分布式事务处理（处理多个数据库）
+
+####编程式事务处理
+DAO:
+
+    public class HelloDao {
+    private DataSource dataSource;
+    private PlatformTransactionManager transactionManager;
+
+    //通过注入依赖来完成管理，xml
+    public DataSource getDataSource() {
+        return dataSource;
+    }
+
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    public PlatformTransactionManager getTransactionManager() {
+        return transactionManager;
+    }
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    /**
+     * 推荐使用create()
+     * execute；执行事务
+     * TransactionCallback->doInTransaction:进行各种数据库操作
+     * 成功：commit
+     * 失败:rollbacOnException()；事务回滚
+     */
+    //进行事务处理
+    public int create(String msg) {
+        //TransactionTemplate:已编程的方式实现事务控制，无状态且线程安全,需PlatformTransactinManager
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+
+        Object result = transactionTemplate.execute(
+                new TransactionCallback() {
+                    @Override
+                    public Object doInTransaction(TransactionStatus transactionStatus) {
+                        //TODO:执行新增的操作，向数据库新增一笔记录
+
+                        return null;
+                    }
+                });
+        return 1;
+
+    }
+
+    /**
+     *doInTransactionWithoutResult:没有返回值
+     */
+    public void createNO(String msg){
+        TransactionTemplate transactionTemplate=new TransactionTemplate(transactionManager);
+        transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                JdbcTemplate jdbcTemplate=new JdbcTemplate(dataSource);
+                jdbcTemplate.update("");//TODO:执行数据库操作
+            }
+        });
+
+    }
+    /**
+     * DefaultTransactionDefinition：预定义
+     * @param msg
+     * @return
+     */
+    //自己进行rollback commit
+    public int createSelf(String msg) {
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        TransactionStatus status = transactionManager.getTransaction(def);//声明事务开始
+        try {
+            //使用JdbcTemplate操作
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+            jdbcTemplate.update("");//TODO:数据库caoz
+        }catch (DataAccessException ex){
+            //也可以status.setRollBackOnly();
+            transactionManager.rollback(status);
+            throw ex;
+        }finally {
+            transactionManager.commit(status);
+        }
+        return 1;
+
+
+    }
+    }
+
+
+xml 
+       
+    <!--设定DataSource-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName">
+            <!--数据库类型-->
+            <value></value>
+        </property>
+        <!--设定URL-->
+        <property name="url">
+            <value></value>
+        </property>
+        <!--设定用户-->
+        <property name="username">
+            <value>lyl</value>
+        </property>
+        <property name="password">
+            <value>11111</value>
+        </property>
+    </bean>
+    <!--设定transactinManager-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+    </bean>
+    <!--Dao-->
+
+    <bean id="helloDAo" class="dao.HelloDao">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+    </bean>
+
+
+
+####声明式事务处理
+
+jar:
+
+* aopalliance.jar 
+* cglib-nodep.jar
+
+Dao:
+
+        /**
+        * 声明式事务
+         * Created by user on 2016/9/20.
+        */
+         public class HelloDaoMajor {
+         private DataSource dataSource;
+         private JdbcTemplate jdbcTemplate;
+          //通过依赖注入
+         public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+        jdbcTemplate=new JdbcTemplate( dataSource);
+         }
+
+        //在xml中配置事务处理
+          public void create(String msg){
+           jdbcTemplate.update("");
+          }
+
+
+xml:
+
+     <!--设定DataSource-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName">
+            <!--数据库类型-->
+            <value></value>
+        </property>
+        <!--设定URL-->
+        <property name="url">
+            <value></value>
+        </property>
+        <!--设定用户-->
+        <property name="username">
+            <value>lyl</value>
+        </property>
+        <property name="password">
+            <value>11111</value>
+        </property>
+    </bean>
+    <!--设定transactinManager-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+    </bean>
+    <!--Dao-->
+    <bean id="helloDaoMajor" class="dao.HelloDaoMajor"/>
+     <!--声明式事务处理-->
+    <!--方法1：-->
+    <bean id="helloDaoMajorProxy" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="target">
+            <ref bean="helloDaoMajor"/>
+        </property>
+        <!--对create()方法进行事务管理，新建事务管理-->
+        <property name="transactionAttributes">
+            <props>
+                <prop key="create*">PROPAGATION_REQUITED</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!--方法2：-->
+    <bean id="transactionInterceptor" class="org.springframework.transaction.interceptor.TransactionInterceptor">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <!--新建事务-->
+        <property name="transactionAttributes">
+            <value>
+                dao.HelloDaoMajor.create*=PROPAGATION_REQUITED
+            </value>
+        </property>
+    </bean>
+    <bean id="helloDaoMajorProxyA" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="interceptorNames">
+            <value>transactionInterceptor,helloDaoMajor</value>
+        </property>
+    </bean>
+
+
+    </beans>
+
+####xml 实现DataSource 注入
+* Spring 自带的DriverManagerDataSource
+
+        <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName">
+            <!--数据库类型-->
+            <value></value>
+        </property>
+        <!--设定URL-->
+        <property name="url">
+            <value></value>
+        </property>
+        <!--设定用户-->
+        <property name="username">
+            <value>lyl</value>
+        </property>
+        <property name="password">
+            <value>11111</value>
+        </property>
+    </bean>
+
+ 
+* DBCP连接池
+
+ jar: jakarta-commons 中的commons-collections.jar,commons-dbcp.jar,commons-pool.jar
+   
+     <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>3.1</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-dbcp</groupId>
+      <artifactId>commons-dbcp</artifactId>
+      <version>1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-pool</groupId>
+      <artifactId>commons-pool</artifactId>
+      <version>1.6</version>
+    </dependency>
+
