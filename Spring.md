@@ -638,3 +638,91 @@ xml:
       <version>1.6</version>
     </dependency>
 
+* Tomcat JNDI
+
+要在Tomat 的server.xml中添加配置 
+
+###JdbcTemplate 事务处理
+
+Dao:
+
+    public class HelloDAOJdbcTemplate {
+    private JdbcTemplate jdbcTemplate;
+    private PlatformTransactionManager transactionManager;
+    private String sql;
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    public void setSql(String sql) {
+        this.sql = sql;
+    }
+
+    //使用JDBCTemplate
+    public int create(String msg) {
+        DefaultTransactionDefinition df = new DefaultTransactionDefinition();
+        TransactionStatus status = transactionManager.getTransaction(df);//事务开始
+        int result = 0;
+        try {
+            result = jdbcTemplate.update("");//TODO:数据库操作
+            jdbcTemplate.update(this.sql);//在xml 中写具体数据库操作
+        } catch (Exception ex) {
+            transactionManager.rollback(status);
+        } finally {
+            transactionManager.commit(status);
+            return result;
+        }
+
+
+    }
+    }
+xml:
+
+     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName">
+            <!--数据库类型-->
+            <value></value>
+        </property>
+        <!--设定URL-->
+        <property name="url">
+            <value></value>
+        </property>
+        <!--设定用户-->
+        <property name="username">
+            <value>lyl</value>
+        </property>
+        <property name="password">
+            <value>11111</value>
+        </property>
+    </bean>
+
+     <!--设定transactinManager-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+    </bean>
+
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+    </bean>
+    <bean id="helloDAOJdbc" class="dao.HelloDAOJdbcTemplate">
+        <property name="jdbcTemplate">
+            <ref bean="jdbcTemplate"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="sql">
+            <value></value>
+        </property>
+
+    </bean>
