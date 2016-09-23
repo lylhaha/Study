@@ -726,4 +726,160 @@ xml:
         </property>
 
     </bean>
-   ddd
+
+
+##Spring Web 
+
+  spring-servlet.xml配置
+
+        <?xml version="1.0" encoding="UTF-8"?>
+       <beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+       <!--设置映射-->
+       <bean id="urlMapping" class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+           <property name="mappings">
+                 <props>
+                        <prop key="helloWord">helloWordController</prop>
+                        <prop key="FormController">formController</prop>
+                        <prop key="formMultiController">formMuliController</prop>
+                 </props>
+           </property>
+              
+       </bean>
+       <!--定义视图-->
+       <bean id="viewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+              <!--Jsp/Servlet视图-->
+              <property name="viewClass">
+                     <value>org.springframework.web.servlet.view.JstlView</value>
+              </property>
+              <!--jsp存放的目录-->
+              <property name="prefix">
+                     <value>/WEB-INF/jsp/</value>
+              </property>
+              <!--jsp文件后缀-->
+              <property name="suffix">
+                     <value>.jsp</value>
+              </property>
+       </bean>
+       <!--定义Controller-->
+       <bean id="helloWordController" class="controller.HelloWorldController">
+              <property name="helloWorld">
+                     <value>HelloWorld</value>
+              </property>
+              <property name="viewPage">
+                     <value>index</value>
+              </property>
+       </bean>
+       <bean id="formController" class="controller.FormController">
+              <property name="commandClass">
+                     <value>vo.HelloWorld</value>
+              </property>
+              <property name="viewPage">
+                     <value>formShow</value>
+              </property>
+       </bean>
+       <bean id="formMuliController" class="controller.FormMutiController">
+              <property name="methodNameResolver">
+                     <ref bean="pareMethodResolver"/>
+              </property>
+              <property name="viewPage">
+                     <value>formShow</value>
+              </property>
+       </bean>
+       <bean id="pareMethodResolver" class="org.springframework.web.servlet.mvc.multiaction.ParameterMethodNameResolver">
+              <property name="paramName">
+                     <value>method</value>
+              </property>
+
+       </bean>
+
+     </beans>
+
+处理异常的页面
+
+
+####SimpleFormController(过时) 表单操作
+#### MultiActionController 多个操作
+
+    /**
+     * 多种控制
+     * Created by user on 2016/9/23.
+     */
+    public class FormMutiController extends MultiActionController {
+    private Logger logger=Logger.getLogger(this.getClass().getName());
+    private String viewPage;
+
+    public String getViewPage() {
+        return viewPage;
+    }
+
+    public void setViewPage(String viewPage) {
+        this.viewPage = viewPage;
+    }
+
+    public ModelAndView insert(HttpServletRequest request,HttpServletResponse response){
+
+        String helloWord=request.getParameter("msg");
+        Map model=new HashMap();
+        model.put("helloWord","insert"+helloWord);
+        return new ModelAndView(getViewPage(),model);
+    }
+    public ModelAndView update(HttpServletRequest request,HttpServletResponse response){
+        String helloWord=request.getParameter("msg");
+        Map model=new HashMap();
+        model.put("helloWord","update"+helloWord);
+        return new ModelAndView(getViewPage(),model);
+    }
+    public ModelAndView delete(HttpServletRequest request,HttpServletResponse response){
+        String helloWord=request.getParameter("msg");
+        Map model=new HashMap();
+        model.put("helloWord","update"+helloWord);
+        return new ModelAndView(getViewPage(),model);
+    }
+    }
+
+Jsp
+
+     <form name="form" action="formMultiController" method="post">
+     欢迎<input type="text" name="msg" value=""/><br />
+     <input type="submit" name="method" value="insert"/><br>
+     <input type="submit" name="method" value="update"/><br>
+     <input type="submit" name="method" value="delete"/><br>
+
+     </form>
+
+xml
+
+     <bean id="formMuliController" class="controller.FormMutiController">
+              <property name="methodNameResolver">
+                     <ref bean="pareMethodResolver"/>
+              </property>
+              <property name="viewPage">
+                     <value>formShow</value>
+              </property>
+       </bean>
+       <bean id="pareMethodResolver" class="org.springframework.web.servlet.mvc.multiaction.ParameterMethodNameResolver">
+              <property name="paramName">
+                     <value>method</value>
+              </property>
+
+       </bean>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
