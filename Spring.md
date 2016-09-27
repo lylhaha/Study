@@ -763,6 +763,18 @@ xml:
                      <value>.jsp</value>
               </property>
        </bean>
+
+          <!--异常的页面处理 出错进入界面outexception-->
+       <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+              <property name="exceptionMappings">
+                     <props>
+                            <prop key="java.lang.Exception">outException</prop>
+                            <prop key="java.lang.Throwable">outException</prop>
+
+                     </props>
+              </property>
+
+       </bean>
        <!--定义Controller-->
        <bean id="helloWordController" class="controller.HelloWorldController">
               <property name="helloWorld">
@@ -797,7 +809,7 @@ xml:
 
      </beans>
 
-处理异常的页面
+
 
 
 ####SimpleFormController(过时) 表单操作
@@ -874,12 +886,115 @@ xml
 
 
 
+####处理异常的页面
+
+    <!--异常的页面处理-->
+     <bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+              <property name="exceptionMappings">
+                     <props>
+                            <prop key="java.lang.Exception">outException</prop>
+                            <prop key="java.lang.Throwable">outException</prop>
+
+                     </props>
+              </property>
+
+       </bean>
 
 
 
+#### 数据绑定
+* 自定义标签
 
 
+* Validator
 
 
+####本地化支持
 
 
+####日志
+* log4j（http://blog.csdn.net/azheng270/article/details/2173430/）
+
+log4j格式
+
+    #配置根Logger
+    log4j.rootLogger  =   [ level ]   ,  appenderName1 ,  appenderName2 ,  …
+    #配置日志信息输出目的地Appender
+    log4j.appender.appenderName =fully.qualified.name.of.appender.class ....
+    配置日志信息的格式（布局）
+    log4j.appender.appenderName.layout  =  fully.qualified.name.of.layout.class
+    log4j.appender.appenderName.layout.option1  =  value1  
+　　 
+
+详解            
+
+            log4j中有五级logger 输出级别:  
+               FATAL 0   
+               ERROR 3   
+               WARN 4   
+               INFO 6   
+               DEBUG 7 
+           ----------------------------------
+ 
+           log4j配置相关说明
+            %p 输出优先级，即DEBUG，INFO，WARN，ERROR，FATAL   
+            %r 输出自应用启动到输出该log信息耗费的毫秒数 
+            %c 输出所属的类目，通常就是所在类的全名   
+            %t 输出产生该日志事件的线程名  
+            %m 输出代码中指定的信息  
+            %n 输出一个回车换行符，Windows平台为“\r\n”，Unix平台为“\n”        
+            %d 输出日志时间点的日期或时间，默认格式为ISO8601，也可以在其后指定格式，比如：%d{yyyy MM dd HH:mm:ss,SSS}，输出类似： 2002年10月18日 22：10：28，921   
+            %l 输出日志事件的发生位置，包括类目名、发生的线程，以及在代码中的行数。举例：Testlog4.main(TestLog4.java:10) 
+             --------------------------------------------
+             log4j提供4种布局:   
+              org.apache.log4j.HTMLLayout（以HTML表格形式布局）  
+              org.apache.log4j.PatternLayout（可以灵活地指定 布局模式），  
+              org.apache.log4j.SimpleLayout（包含日志信息的级别和信息字符串）
+              org.apache.log4j.TTCCLayout（包含日志产生的时间、线程、类别等等信息 
+              --------------------------
+             Appender 为日志输出目的地，Log4j提供的appender有以下几种：
+             org.apache.log4j.ConsoleAppender（控制台），
+             org.apache.log4j.FileAppender（文件），
+             org.apache.log4j.DailyRollingFileAppender（每天产生一个日志文件），
+             org.apache.log4j.RollingFileAppender（文件大小到达指定尺寸的时候产生一个新的文件），
+             org.apache.log4j.WriterAppender（将日志信息以流格式发送到任意指定的地方
+    
+具体：
+log4j.properties
+
+      log4j.rootLogger=DEBUG,console,FILE    
+    
+     log4j.appender.console=org.apache.log4j.ConsoleAppender    
+     log4j.appender.console.threshold=INFO    
+     log4j.appender.console.layout=org.apache.log4j.PatternLayout    
+     log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH\:mm\:ss} [%5p] - %c -%F(%L) -%m%n    
+    
+    log4j.appender.FILE=org.apache.log4j.RollingFileAppender    
+    log4j.appender.FILE.Append=true    
+    log4j.appender.FILE.File=E\:/logs/log4jtest.log    
+    log4j.appender.FILE.Threshold=INFO    
+    log4j.appender.FILE.layout=org.apache.log4j.PatternLayout    
+    log4j.appender.FILE.layout.ConversionPattern=%d{yyyy-MM-dd HH\:mm\:ss} [%5p] - %c -%F(%L) -%m%n    
+    log4j.appender.FILE.MaxFileSize=10MB  
+
+web.xml
+
+       <!--配置log4j-->
+    <context-param>
+        <param-name>webAppRootKey</param-name>
+        <param-value>SpringMVCExercise.root</param-value>
+    </context-param>
+    <context-param>
+        <param-name>log4jConfigLocation</param-name>
+        <param-value>/WEB-INF/log4j.properties</param-value>
+    </context-param>
+    <context-param>
+      <param-name>log4jRefreshInterval</param-name>
+      <param-value>60000</param-value>
+    </context-param>
+
+    <listener>
+        <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+    </listener>
+
+* logback
