@@ -596,7 +596,7 @@ xml:
 
     </beans>
 
-####xml 实现DataSource 注入
+####xml 实现DataSource 注入 http://blog.csdn.net/orclight/article/details/8616103
 * Spring 自带的DriverManagerDataSource
 
         <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
@@ -638,7 +638,32 @@ xml:
       <version>1.6</version>
     </dependency>
 
+* c3p0
+
+  csp0.jar
+
+        <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"         
+            destroy-method="close">        
+        <property name="driverClass" value=" oracle.jdbc.driver.OracleDriver "/>        
+        <property name="jdbcUrl" value="jdbc:oracle:thin:@172.19.34.6:1521:ORCL"/>        
+        <property name="user" value="orclight"/>        
+        <property name="password" value="123456"/>        
+        </bean> 
+ 
+
 * Tomcat JNDI
+* Druid
+druid.jar
+
+        <dependency>
+        <groupId>com.alibaba</groupId>
+        <artifactId>druid</artifactId>
+        <version>1.0.19</version>
+        </dependency>
+
+
+
+
 
 要在Tomat 的server.xml中添加配置 
 
@@ -997,4 +1022,89 @@ web.xml
         <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
     </listener>
 
-* logback
+* logback（取代log4j）
+
+导入jar
+     
+       <!--logback-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.logback-extensions</groupId>
+            <artifactId>logback-ext-spring</artifactId>
+            <version>0.1.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>1.7.12</version>
+        </dependency>
+
+web.xml
+
+     <listener>
+        <listener-class>ch.qos.logback.ext.spring.web.LogbackConfigListener</listener-class>
+    </listener>
+    <context-param>
+        <param-name>logbackConfigLocation</param-name>
+        <param-value>classpath:logback.xml</param-value>
+    </context-param>
+
+
+resource下建logbank.xml
+
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+    <Pattern>%d{HH:mm:ss.SSS} %-5level %logger{80} - %msg%n</Pattern>
+    </encoder>
+    </appender>
+    <appender name="FILE"
+      class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+    <FileNamePattern>D:/logs/debug.%d{yyyy-MM-dd}.log</FileNamePattern>
+    <MaxHistory>30</MaxHistory>
+    </rollingPolicy>
+    <encoder>
+    <pattern>%date [%thread] %-5level %logger{80} - %msg%n</pattern>
+    </encoder>
+    </appender>
+    <root>
+    <level value="INFO" />
+    <appender-ref ref="FILE" />
+    </root>
+    </configuration>
+
+#####定时器
+某一个方法在某一时间间隔循环执行
+
+* java.util.Timer
+* Quartz
+
+
+
+###Spring 简化操作
+#####注解
+spring-servlet.xml
+
+   
+
+      <context:component-scan base-package="com.lyl.*">
+            <context:include-filter type="regex" expression="com.lyl.*.controller.*"/>
+     </context:component-scan>
+
+
+
+  type类型：
+     
+     annotation: 指定注解所标注的内容
+     assignable: 派生于指定expression的所有类
+      aspectj  : AspectJ表达式所匹配的那些类
+      custom   : 
+      regext   : 名称相同的类
+   
